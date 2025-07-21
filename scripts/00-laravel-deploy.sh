@@ -3,11 +3,7 @@
     # Exit immediately if a command exits with a non-zero status.
     set -e
 
-    echo "Running composer install..."
-    # Install Composer dependencies, skipping dev dependencies for production
-    # --prefer-dist for faster installs, --optimize-autoloader for performance
-    # --working-dir=/var/www/html ensures it runs in the correct application root
-    composer install --no-dev --prefer-dist --optimize-autoloader --working-dir=/var/www/html
+    # Note: composer install is now handled in the Dockerfile's builder stage.
 
     echo "Generating application key..."
     # Generate the application key. --force is needed in non-interactive environments.

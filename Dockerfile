@@ -1,51 +1,60 @@
     # Dockerfile
-    # Choose a base image with Nginx and PHP-FPM.
+
+    # --- Stage 1: Builder ---
+    # Use a dedicated Composer image to install dependencies
+    FROM composer:2.7 as builder
+
+    # Set the working directory for Composer
+    WORKDIR /app
+
+    # Copy composer.json and composer.lock to leverage Docker cache
+    COPY composer.json composer.lock ./
+
+    # Install Composer dependencies
+    # --no-dev: Skip development dependencies
+    # --optimize-autoloader: Optimize Composer autoloader for production
+    # --no-interaction: Prevent interactive prompts
+    # --prefer-dist: Download packages from distribution archives
+    RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+    # Copy the entire application code for the build stage
+    COPY . .
+
+    # Run the Laravel deployment script to generate key, cache config/routes/views, and run migrations
+    # This script will be executed during the build process
+    RUN chmod +x scripts/00-laravel-deploy.sh
+    RUN scripts/00-laravel-deploy.sh
+
+
+    # --- Stage 2: Production ---
+    # Use a clean Nginx/PHP-FPM base image for the final production environment
     # Adjust the tag to match your PHP version (e.g., 1.7.2 for PHP 8.2, 1.8.0 for PHP 8.3)
     FROM richarvey/nginx-php-fpm:1.7.2
 
-    # Set the working directory inside the container
+    # Set the working directory for the application
     WORKDIR /var/www/html
 
-    # Copy your entire application code into the container
-    # The .dockerignore file will ensure sensitive/unnecessary files are not copied
-    COPY . .
+    # Copy only the necessary files from the builder stage
+    # This includes the application code and the vendor directory
+    COPY --from=builder /app /var/www/html
 
     # --- Image Configuration Environment Variables ---
-    # SKIP_COMPOSER: Tells the base image's start script to skip its own composer install
-    ENV SKIP_COMPOSER 1
-    # WEBROOT: Specifies the document root for Nginx (Laravel's public directory)
+    # These are specific to the richarvey/nginx-php-fpm image
     ENV WEBROOT /var/www/html/public
-    # PHP_ERRORS_STDERR: Directs PHP errors to stderr, visible in Render logs
     ENV PHP_ERRORS_STDERR 1
-    # RUN_SCRIPTS: Tells the base image's start script to run custom scripts
-    ENV RUN_SCRIPTS 1
-    # REAL_IP_HEADER: For proxy environments like Render
     ENV REAL_IP_HEADER 1
 
-    # --- Laravel Application Environment Variables (for build time if needed) ---
+    # --- Laravel Application Environment Variables ---
     # These will be overridden by Render's environment variables at runtime
     ENV APP_ENV production
     ENV APP_DEBUG false
     ENV LOG_CHANNEL stderr # Directs Laravel logs to stderr, visible in Render logs
 
-    # Allow composer to run as root (necessary in some Docker environments)
-    ENV COMPOSER_ALLOW_SUPERUSER 1
-
     # --- Custom Nginx Configuration ---
-    # Copy your custom Nginx site configuration. This will replace the default.
-    # Ensure the path matches where you create your nginx-site.conf file in Step 3.
+    # Copy your custom Nginx site configuration
     COPY conf/nginx/nginx-site.conf /etc/nginx/sites-available/default.conf
 
-    # --- Deployment Script ---
-    # Copy your custom deployment script. This script will run during the build process.
-    # Ensure the path matches where you create your 00-laravel-deploy.sh file in Step 4.
-    COPY scripts/00-laravel-deploy.sh /usr/local/bin/00-laravel-deploy.sh
-    # Make the deployment script executable
-    RUN chmod +x /usr/local/bin/00-laravel-deploy.sh
-
     # --- Command to Start the Application ---
-    # This command is run when the container starts.
-    # The richarvey/nginx-php-fpm image provides a /start.sh script that handles
-    # starting Nginx and PHP-FPM, and also runs scripts copied to /usr/local/bin/
+    # The /start.sh script from the base image will start Nginx and PHP-FPM
     CMD ["/start.sh"]
     

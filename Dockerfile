@@ -12,21 +12,19 @@ COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
 RUN curl -fsSL "https://caddyserver.com/api/download?os=linux&arch=amd64&idempotency=12345" -o /usr/bin/caddy \
     && chmod +x /usr/bin/caddy
 
-
 # Set working directory
 WORKDIR /var/www/html
 COPY . .
 
 # Install Laravel dependencies
-RUN composer install --no-dev --optimize-autoloader \
-    && php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache \
-    && chown -R www-data:www-data storage bootstrap/cache
+RUN composer install --no-dev --optimize-autoloader
 
-# Example for a Debian/Ubuntu-based PHP image
+# Install PostgreSQL extensions
 RUN apt-get update && apt-get install -y libpq-dev \
     && docker-php-ext-install pdo_pgsql
+
+# Fix permissions for storage and bootstrap/cache
+RUN chown -R www-data:www-data storage bootstrap/cache
 
 # Copy configs
 COPY Caddyfile /etc/caddy/Caddyfile

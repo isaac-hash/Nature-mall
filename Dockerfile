@@ -24,6 +24,9 @@ RUN composer install --no-dev --optimize-autoloader \
     && php artisan view:cache \
     && chown -R www-data:www-data storage bootstrap/cache
 
+# Example for a Debian/Ubuntu-based PHP image
+RUN docker-php-ext-install pdo_pdo pdo_pgsql
+
 # Copy configs
 COPY Caddyfile /etc/caddy/Caddyfile
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf

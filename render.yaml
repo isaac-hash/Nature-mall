@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: laravel-app
+    env: docker
+    plan: starter
+    autoDeploy: true
+    envVars:
+      - key: APP_KEY
+        value: base64:f2BRkldspG4ng4ICK8w+n0OFJJM22lB8PBWxJfupIaw=   # Generate with `php artisan key:generate --show`
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        value: your-db-host
+      - key: DB_PORT
+        value: 3306
+      - key: DB_DATABASE
+        value: your-db-name
+      - key: DB_USERNAME
+        value: your-db-user
+      - key: DB_PASSWORD
+        value: your-db-password

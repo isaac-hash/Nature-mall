@@ -9,7 +9,9 @@ RUN apt-get update && apt-get install -y \
 COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
 
 # Install Caddy
-RUN curl -fsSL https://caddyserver.com/api/download\?os\=linux\&arch\=amd64 | tar xz -C /usr/bin caddy
+RUN curl -fsSL "https://caddyserver.com/api/download?os=linux&arch=amd64&idempotency=12345" -o /usr/bin/caddy \
+    && chmod +x /usr/bin/caddy
+
 
 # Set working directory
 WORKDIR /var/www/html

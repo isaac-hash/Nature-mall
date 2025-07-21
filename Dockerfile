@@ -25,7 +25,8 @@ RUN composer install --no-dev --optimize-autoloader \
     && chown -R www-data:www-data storage bootstrap/cache
 
 # Example for a Debian/Ubuntu-based PHP image
-RUN docker-php-ext-install pdo pgsql pdo_pgsql
+RUN apt-get update && apt-get install -y libpq-dev \
+    && docker-php-ext-install pdo_pgsql
 
 # Copy configs
 COPY Caddyfile /etc/caddy/Caddyfile

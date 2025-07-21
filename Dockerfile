@@ -4,10 +4,11 @@
     # Use a dedicated Composer image to install dependencies
     FROM composer:2.7 as builder
 
-    # Set the working directory for Composer
-    WORKDIR /app
+    # Set the working directory to the application's final root path
+    WORKDIR /var/www/html
 
-    # Copy composer.json and composer.lock to leverage Docker cache
+    # Copy composer.json and composer.lock first to leverage Docker layer caching
+    # This means if only your app code changes, composer install won't re-run
     COPY composer.json composer.lock ./
 
     # Install Composer dependencies
@@ -17,11 +18,12 @@
     # --prefer-dist: Download packages from distribution archives
     RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
-    # Copy the entire application code for the build stage
+    # Copy the entire application code into the builder stage (including files not managed by Composer)
+    # The .dockerignore file ensures sensitive/unnecessary files are not copied
     COPY . .
 
-    # Run the Laravel deployment script to generate key, cache config/routes/views, and run migrations
-    # This script will be executed during the build process
+    # Make the deployment script executable and run it
+    # This script will perform Laravel Artisan commands during the build process
     RUN chmod +x scripts/00-laravel-deploy.sh
     RUN scripts/00-laravel-deploy.sh
 
@@ -31,12 +33,12 @@
     # Adjust the tag to match your PHP version (e.g., 1.7.2 for PHP 8.2, 1.8.0 for PHP 8.3)
     FROM richarvey/nginx-php-fpm:1.7.2
 
-    # Set the working directory for the application
+    # Set the working directory for the application in the final image
     WORKDIR /var/www/html
 
-    # Copy only the necessary files from the builder stage
-    # This includes the application code and the vendor directory
-    COPY --from=builder /app /var/www/html
+    # Copy the entire built application (including the vendor directory) from the builder stage
+    # This is the crucial step to ensure vendor/autoload.php is present
+    COPY --from=builder /var/www/html /var/www/html
 
     # --- Image Configuration Environment Variables ---
     # These are specific to the richarvey/nginx-php-fpm image
@@ -51,7 +53,7 @@
     ENV LOG_CHANNEL stderr # Directs Laravel logs to stderr, visible in Render logs
 
     # --- Custom Nginx Configuration ---
-    # Copy your custom Nginx site configuration
+    # Copy your custom Nginx site configuration. This will replace the default.
     COPY conf/nginx/nginx-site.conf /etc/nginx/sites-available/default.conf
 
     # --- Command to Start the Application ---

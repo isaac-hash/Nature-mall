@@ -25,7 +25,7 @@ RUN composer install --no-dev --optimize-autoloader \
     && chown -R www-data:www-data storage bootstrap/cache
 
 # Example for a Debian/Ubuntu-based PHP image
-RUN docker-php-ext-install pdo_pdo pdo_pgsql
+RUN docker-php-ext-install pdo pgsql pdo_pgsql
 
 # Copy configs
 COPY Caddyfile /etc/caddy/Caddyfile

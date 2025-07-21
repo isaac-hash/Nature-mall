@@ -1,0 +1,19 @@
+    # .dockerignore
+    # Ignore Node.js related files if you don't need them in the backend container
+    /node_modules
+    /public/hot
+    /public/storage
+    /storage/*.key
+    /vendor               # Composer dependencies will be installed inside the Dockerfile
+    .env                  # Crucial: Never commit your .env file
+    .env.backup
+    .phpunit.result.cache
+    Homestead.json
+    Homestead.yaml
+    npm-debug.log
+    yarn-error.log
+    .idea                 # IDE specific files
+    .vscode               # VS Code specific files
+    /.fleet               # JetBrains Fleet specific files
+    /.ds_store            # macOS specific files
+    
